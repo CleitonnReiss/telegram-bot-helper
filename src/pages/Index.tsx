@@ -9,12 +9,12 @@ import axios from "axios";
 
 const Index = () => {
   const [botToken, setBotToken] = useState("");
+  const [chatId, setChatId] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const { toast } = useToast();
 
-  // Load bot token from localStorage on mount
   useEffect(() => {
     const savedToken = localStorage.getItem("telegram_bot_token");
     if (savedToken) {
@@ -22,7 +22,6 @@ const Index = () => {
     }
   }, []);
 
-  // Save bot token to localStorage when it changes
   useEffect(() => {
     if (botToken) {
       localStorage.setItem("telegram_bot_token", botToken);
@@ -30,15 +29,14 @@ const Index = () => {
   }, [botToken]);
 
   const validateBotToken = (token: string) => {
-    // Basic validation for bot token format
     return token.includes(":") && token.length > 20;
   };
 
   const sendMessage = async () => {
-    if (!botToken || !message.trim()) {
+    if (!botToken || !message.trim() || !chatId) {
       toast({
         title: "Error",
-        description: "Please provide both bot token and message",
+        description: "Please provide bot token, chat ID, and message",
         variant: "destructive",
       });
       return;
@@ -55,7 +53,7 @@ const Index = () => {
 
     setLoading(true);
     try {
-      // First, get the bot's chat ID (which is the same as the bot's ID)
+      // Verify bot token is valid
       const botInfoResponse = await axios.get(
         `https://api.telegram.org/bot${botToken}/getMe`
       );
@@ -64,9 +62,7 @@ const Index = () => {
         throw new Error("Invalid bot token");
       }
 
-      const chatId = botInfoResponse.data.result.id;
-
-      // Send message to the bot's chat
+      // Send message to the specified chat
       const sendMessageResponse = await axios.post(
         `https://api.telegram.org/bot${botToken}/sendMessage`,
         {
@@ -92,7 +88,7 @@ const Index = () => {
       console.error("Telegram API Error:", error);
       toast({
         title: "Error",
-        description: error.response?.data?.description || "Failed to send message. Please check your bot token.",
+        description: error.response?.data?.description || "Failed to send message. Please check your bot token and chat ID.",
         variant: "destructive",
       });
     } finally {
@@ -110,7 +106,7 @@ const Index = () => {
               Telegram Bot Messenger
             </h1>
             <p className="text-sm text-gray-500">
-              Send messages directly to your Telegram bot's chat
+              Send messages to a Telegram chat using your bot
             </p>
           </div>
 
@@ -128,6 +124,22 @@ const Index = () => {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Chat ID
+              </label>
+              <Input
+                type="text"
+                value={chatId}
+                onChange={(e) => setChatId(e.target.value)}
+                placeholder="Enter the chat ID"
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Add your bot to a group and use the group's chat ID
               </p>
             </div>
 
