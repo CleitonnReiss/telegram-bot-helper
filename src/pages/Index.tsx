@@ -1,11 +1,150 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import { MessageSquare, Send, History } from "lucide-react";
+import axios from "axios";
 
 const Index = () => {
+  const [botToken, setBotToken] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+  const { toast } = useToast();
+
+  // Load bot token from localStorage on mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem("telegram_bot_token");
+    if (savedToken) {
+      setBotToken(savedToken);
+    }
+  }, []);
+
+  // Save bot token to localStorage when it changes
+  useEffect(() => {
+    if (botToken) {
+      localStorage.setItem("telegram_bot_token", botToken);
+    }
+  }, [botToken]);
+
+  const sendMessage = async () => {
+    if (!botToken || !message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide both bot token and message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // First, get the bot's chat ID (which is the same as the bot's ID)
+      const botInfoResponse = await axios.get(
+        `https://api.telegram.org/bot${botToken}/getMe`
+      );
+      const chatId = botInfoResponse.data.result.id;
+
+      // Send message to the bot's chat
+      await axios.post(
+        `https://api.telegram.org/bot${botToken}/sendMessage`,
+        {
+          chat_id: chatId,
+          text: message,
+        }
+      );
+
+      // Add to history
+      setHistory((prev) => [message, ...prev].slice(0, 5));
+      setMessage("");
+      
+      toast({
+        title: "Success",
+        description: "Message sent successfully!",
+        className: "bg-green-500 text-white",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please check your bot token.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Card className="p-6 space-y-6 bg-white/80 backdrop-blur-sm">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+              <MessageSquare className="w-6 h-6" />
+              Telegram Bot Messenger
+            </h1>
+            <p className="text-sm text-gray-500">
+              Send messages directly to your Telegram bot's chat
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Bot Token
+              </label>
+              <Input
+                type="password"
+                value={botToken}
+                onChange={(e) => setBotToken(e.target.value)}
+                placeholder="Enter your bot token"
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Message
+              </label>
+              <Textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your message here..."
+                className="min-h-[120px]"
+              />
+            </div>
+
+            <Button
+              onClick={sendMessage}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 transition-all"
+            >
+              <Send className="w-4 h-4" />
+              {loading ? "Sending..." : "Send Message"}
+            </Button>
+          </div>
+        </Card>
+
+        {history.length > 0 && (
+          <Card className="p-6 bg-white/80 backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="w-5 h-5 text-gray-600" />
+              <h2 className="text-lg font-medium text-gray-900">Recent Messages</h2>
+            </div>
+            <div className="space-y-3">
+              {history.map((msg, index) => (
+                <div
+                  key={index}
+                  className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700"
+                >
+                  {msg}
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
