@@ -29,11 +29,25 @@ const Index = () => {
     }
   }, [botToken]);
 
+  const validateBotToken = (token: string) => {
+    // Basic validation for bot token format
+    return token.includes(":") && token.length > 20;
+  };
+
   const sendMessage = async () => {
     if (!botToken || !message.trim()) {
       toast({
         title: "Error",
         description: "Please provide both bot token and message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validateBotToken(botToken)) {
+      toast({
+        title: "Error",
+        description: "Invalid bot token format. Please check your token.",
         variant: "destructive",
       });
       return;
@@ -45,16 +59,25 @@ const Index = () => {
       const botInfoResponse = await axios.get(
         `https://api.telegram.org/bot${botToken}/getMe`
       );
+
+      if (!botInfoResponse.data.ok) {
+        throw new Error("Invalid bot token");
+      }
+
       const chatId = botInfoResponse.data.result.id;
 
       // Send message to the bot's chat
-      await axios.post(
+      const sendMessageResponse = await axios.post(
         `https://api.telegram.org/bot${botToken}/sendMessage`,
         {
           chat_id: chatId,
           text: message,
         }
       );
+
+      if (!sendMessageResponse.data.ok) {
+        throw new Error("Failed to send message");
+      }
 
       // Add to history
       setHistory((prev) => [message, ...prev].slice(0, 5));
@@ -65,10 +88,11 @@ const Index = () => {
         description: "Message sent successfully!",
         className: "bg-green-500 text-white",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Telegram API Error:", error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please check your bot token.",
+        description: error.response?.data?.description || "Failed to send message. Please check your bot token.",
         variant: "destructive",
       });
     } finally {
@@ -102,6 +126,9 @@ const Index = () => {
                 placeholder="Enter your bot token"
                 className="w-full"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+              </p>
             </div>
 
             <div>
