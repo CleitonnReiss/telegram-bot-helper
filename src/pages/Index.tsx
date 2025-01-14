@@ -4,8 +4,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageSquare, Send, History } from "lucide-react";
+import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, Minus } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import axios from "axios";
+
+interface InlineButton {
+  text: string;
+  url: string;
+}
 
 const Index = () => {
   const [botToken, setBotToken] = useState("");
@@ -13,6 +21,9 @@ const Index = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState("");
+  const [buttons, setButtons] = useState<InlineButton[]>([{ text: "", url: "" }]);
+  const [parseMode, setParseMode] = useState<"HTML" | "Markdown" | "">("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,6 +41,20 @@ const Index = () => {
 
   const validateBotToken = (token: string) => {
     return token.includes(":") && token.length > 20;
+  };
+
+  const addButton = () => {
+    setButtons([...buttons, { text: "", url: "" }]);
+  };
+
+  const removeButton = (index: number) => {
+    setButtons(buttons.filter((_, i) => i !== index));
+  };
+
+  const updateButton = (index: number, field: keyof InlineButton, value: string) => {
+    const newButtons = [...buttons];
+    newButtons[index] = { ...newButtons[index], [field]: value };
+    setButtons(newButtons);
   };
 
   const sendMessage = async () => {
@@ -62,22 +87,40 @@ const Index = () => {
         throw new Error("Invalid bot token");
       }
 
-      // Send message to the specified chat
-      const sendMessageResponse = await axios.post(
-        `https://api.telegram.org/bot${botToken}/sendMessage`,
-        {
-          chat_id: chatId,
-          text: message,
-        }
-      );
+      // Prepare inline keyboard if there are buttons
+      const replyMarkup = buttons.some(b => b.text && b.url) ? {
+        inline_keyboard: [buttons.filter(b => b.text && b.url)]
+      } : undefined;
 
-      if (!sendMessageResponse.data.ok) {
-        throw new Error("Failed to send message");
+      // Send image if provided
+      if (imageUrl) {
+        await axios.post(
+          `https://api.telegram.org/bot${botToken}/sendPhoto`,
+          {
+            chat_id: chatId,
+            photo: imageUrl,
+            caption: message,
+            parse_mode: parseMode || undefined,
+            reply_markup: replyMarkup
+          }
+        );
+      } else {
+        // Send text message
+        await axios.post(
+          `https://api.telegram.org/bot${botToken}/sendMessage`,
+          {
+            chat_id: chatId,
+            text: message,
+            parse_mode: parseMode || undefined,
+            reply_markup: replyMarkup
+          }
+        );
       }
 
-      // Add to history
       setHistory((prev) => [message, ...prev].slice(0, 5));
       setMessage("");
+      setImageUrl("");
+      setButtons([{ text: "", url: "" }]);
       
       toast({
         title: "Success",
@@ -106,7 +149,7 @@ const Index = () => {
               Telegram Bot Messenger
             </h1>
             <p className="text-sm text-gray-500">
-              Send messages to a Telegram chat using your bot
+              Send rich messages to a Telegram chat using your bot
             </p>
           </div>
 
@@ -145,6 +188,96 @@ const Index = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Message Format
+              </label>
+              <RadioGroup
+                value={parseMode}
+                onValueChange={(value) => setParseMode(value as "HTML" | "Markdown" | "")}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="" id="none" />
+                  <Label htmlFor="none">Plain Text</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="HTML" id="html" />
+                  <Label htmlFor="html">HTML</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Markdown" id="markdown" />
+                  <Label htmlFor="markdown">Markdown</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Image URL (Optional)
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="Enter image URL"
+                  className="w-full"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  type="button"
+                  onClick={() => setImageUrl("")}
+                  className="shrink-0"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" type="button" className="w-full">
+                  <Link className="mr-2 h-4 w-4" />
+                  Inline Buttons
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 mt-2">
+                {buttons.map((button, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Button Text"
+                      value={button.text}
+                      onChange={(e) => updateButton(index, "text", e.target.value)}
+                    />
+                    <Input
+                      placeholder="URL"
+                      value={button.url}
+                      onChange={(e) => updateButton(index, "url", e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      type="button"
+                      onClick={() => removeButton(index)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={addButton}
+                  className="w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Button
+                </Button>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Message
               </label>
               <Textarea
@@ -153,6 +286,16 @@ const Index = () => {
                 placeholder="Type your message here..."
                 className="min-h-[120px]"
               />
+              {parseMode === "HTML" && (
+                <p className="text-xs text-gray-500 mt-1">
+                  You can use HTML tags: &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;, &lt;code&gt;monospace&lt;/code&gt;, &lt;a href="URL"&gt;link&lt;/a&gt;
+                </p>
+              )}
+              {parseMode === "Markdown" && (
+                <p className="text-xs text-gray-500 mt-1">
+                  You can use Markdown: **bold**, *italic*, `code`, [link](URL)
+                </p>
+              )}
             </div>
 
             <Button
