@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, Minus } from "lucide-react";
+import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, Minus, ArrowUp, ArrowDown } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -13,6 +13,7 @@ import axios from "axios";
 interface InlineButton {
   text: string;
   url: string;
+  row?: number;
 }
 
 const Index = () => {
@@ -22,7 +23,7 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
-  const [buttons, setButtons] = useState<InlineButton[]>([{ text: "", url: "" }]);
+  const [buttons, setButtons] = useState<InlineButton[]>([{ text: "", url: "", row: 0 }]);
   const [parseMode, setParseMode] = useState<"HTML" | "Markdown" | "">("");
   const { toast } = useToast();
 
@@ -44,16 +45,26 @@ const Index = () => {
   };
 
   const addButton = () => {
-    setButtons([...buttons, { text: "", url: "" }]);
+    const lastButton = buttons[buttons.length - 1];
+    const newRow = lastButton ? lastButton.row || 0 : 0;
+    setButtons([...buttons, { text: "", url: "", row: newRow }]);
   };
 
   const removeButton = (index: number) => {
     setButtons(buttons.filter((_, i) => i !== index));
   };
 
-  const updateButton = (index: number, field: keyof InlineButton, value: string) => {
+  const updateButton = (index: number, field: keyof InlineButton, value: string | number) => {
     const newButtons = [...buttons];
     newButtons[index] = { ...newButtons[index], [field]: value };
+    setButtons(newButtons);
+  };
+
+  const moveButtonRow = (index: number, direction: "up" | "down") => {
+    const newButtons = [...buttons];
+    const currentRow = newButtons[index].row || 0;
+    newButtons[index].row = direction === "up" ? currentRow - 1 : currentRow + 1;
+    if (newButtons[index].row! < 0) newButtons[index].row = 0;
     setButtons(newButtons);
   };
 
@@ -78,7 +89,6 @@ const Index = () => {
 
     setLoading(true);
     try {
-      // Verify bot token is valid
       const botInfoResponse = await axios.get(
         `https://api.telegram.org/bot${botToken}/getMe`
       );
@@ -87,12 +97,20 @@ const Index = () => {
         throw new Error("Invalid bot token");
       }
 
-      // Prepare inline keyboard if there are buttons
-      const replyMarkup = buttons.some(b => b.text && b.url) ? {
-        inline_keyboard: [buttons.filter(b => b.text && b.url)]
+      const buttonRows = buttons
+        .filter(b => b.text && b.url)
+        .reduce((acc: { text: string; url: string }[][], button) => {
+          const row = button.row || 0;
+          if (!acc[row]) acc[row] = [];
+          acc[row].push({ text: button.text, url: button.url });
+          return acc;
+        }, [])
+        .filter(row => row.length > 0);
+
+      const replyMarkup = buttonRows.length > 0 ? {
+        inline_keyboard: buttonRows
       } : undefined;
 
-      // Send image if provided
       if (imageUrl) {
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendPhoto`,
@@ -105,7 +123,6 @@ const Index = () => {
           }
         );
       } else {
-        // Send text message
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendMessage`,
           {
@@ -120,7 +137,7 @@ const Index = () => {
       setHistory((prev) => [message, ...prev].slice(0, 5));
       setMessage("");
       setImageUrl("");
-      setButtons([{ text: "", url: "" }]);
+      setButtons([{ text: "", url: "", row: 0 }]);
       
       toast({
         title: "Success",
@@ -254,14 +271,34 @@ const Index = () => {
                       value={button.url}
                       onChange={(e) => updateButton(index, "url", e.target.value)}
                     />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      type="button"
-                      onClick={() => removeButton(index)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        type="button"
+                        onClick={() => moveButtonRow(index, "up")}
+                        title="Move to row above"
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        type="button"
+                        onClick={() => moveButtonRow(index, "down")}
+                        title="Move to row below"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        type="button"
+                        onClick={() => removeButton(index)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 <Button
