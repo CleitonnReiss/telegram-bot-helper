@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTheme } from "@/components/theme-provider";
 import axios from "axios";
+import { PredefinedButtons } from "@/components/PredefinedButtons";
+import { ImageUpload } from "@/components/ImageUpload";
 
 interface InlineButton {
   text: string;
@@ -158,6 +160,10 @@ const Index = () => {
     }
   };
 
+  const handleSelectPredefinedButtons = (newButtons: InlineButton[]) => {
+    setButtons(newButtons);
+  };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -240,26 +246,12 @@ const Index = () => {
 
             <div>
               <Label htmlFor="imageUrl" className="text-sm font-medium text-foreground">
-                Image URL (Optional)
+                Image
               </Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  id="imageUrl"
-                  type="text"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Enter image URL"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  type="button"
-                  onClick={() => setImageUrl("")}
-                  className="shrink-0"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-              </div>
+              <ImageUpload
+                onImageUrl={setImageUrl}
+                currentUrl={imageUrl}
+              />
             </div>
 
             <Collapsible>
@@ -270,6 +262,10 @@ const Index = () => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-3">
+                <PredefinedButtons
+                  onSelectButtons={handleSelectPredefinedButtons}
+                  currentButtons={buttons}
+                />
                 {buttons.map((button, index) => (
                   <Card key={index} className="p-4 space-y-3">
                     <div className="flex items-center justify-between mb-2">
