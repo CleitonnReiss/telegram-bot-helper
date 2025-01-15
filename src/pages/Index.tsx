@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, ArrowUp, ArrowDown, Moon, Sun } from "lucide-react";
+import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, ArrowUp, ArrowDown, Moon, Sun, Minus } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
