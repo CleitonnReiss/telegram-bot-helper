@@ -14,6 +14,7 @@ interface ImageUploadProps {
 export const ImageUpload = ({ onImageUrl, currentUrl }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useState<HTMLInputElement | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,6 +42,10 @@ export const ImageUpload = ({ onImageUrl, currentUrl }: ImageUploadProps) => {
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="flex gap-2 items-center">
       <Input
@@ -50,24 +55,23 @@ export const ImageUpload = ({ onImageUrl, currentUrl }: ImageUploadProps) => {
         placeholder="Enter image URL or upload"
         className="flex-1"
       />
-      <div className="relative">
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          className="absolute inset-0 opacity-0 cursor-pointer"
-          disabled={uploading}
-        />
-        <Button
-          variant="outline"
-          size="icon"
-          type="button"
-          disabled={uploading}
-          className="relative"
-        >
-          <Upload className="h-4 w-4" />
-        </Button>
-      </div>
+      <Input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleFileUpload}
+        className="hidden"
+        disabled={uploading}
+      />
+      <Button
+        variant="outline"
+        size="icon"
+        type="button"
+        disabled={uploading}
+        onClick={handleUploadClick}
+      >
+        <Upload className="h-4 w-4" />
+      </Button>
       {currentUrl && (
         <Button
           variant="outline"

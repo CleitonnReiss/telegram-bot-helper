@@ -9,9 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTheme } from "@/components/theme-provider";
-import { Switch } from "@/components/ui/switch";
 import axios from "axios";
-import { PredefinedButtons } from "@/components/PredefinedButtons";
 import { ImageUpload } from "@/components/ImageUpload";
 
 interface InlineButton {
@@ -28,8 +26,6 @@ const Index = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [buttons, setButtons] = useState<InlineButton[]>([{ text: "", url: "", row: 0 }]);
   const [parseMode, setParseMode] = useState<"HTML" | "Markdown" | "">("");
-  const [showSuccessNotification, setShowSuccessNotification] = useState(true);
-  const [showErrorNotification, setShowErrorNotification] = useState(true);
   const [disableNotification, setDisableNotification] = useState(false);
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -77,24 +73,20 @@ const Index = () => {
 
   const sendMessage = async () => {
     if (!botToken || !message.trim() || !chatId) {
-      if (showErrorNotification) {
-        toast({
-          title: "Error",
-          description: "Please provide bot token, chat ID, and message",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Please provide bot token, chat ID, and message",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!validateBotToken(botToken)) {
-      if (showErrorNotification) {
-        toast({
-          title: "Error",
-          description: "Invalid bot token format. Please check your token.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Invalid bot token format. Please check your token.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -152,33 +144,21 @@ const Index = () => {
       setImageUrl("");
       setButtons([{ text: "", url: "", row: 0 }]);
       
-      if (showSuccessNotification) {
-        toast({
-          title: "Success",
-          description: "Message sent successfully!",
-          className: "bg-green-500 text-white",
-        });
-      }
+      toast({
+        title: "Success",
+        description: "Message sent successfully!",
+        className: "bg-green-500 text-white",
+      });
     } catch (error: any) {
       console.error("Telegram API Error:", error);
-      if (showErrorNotification) {
-        toast({
-          title: "Error",
-          description: error.response?.data?.description || "Failed to send message. Please check your bot token and chat ID.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: error.response?.data?.description || "Failed to send message. Please check your bot token and chat ID.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSelectPredefinedButtons = (selectedButtons: InlineButton[]) => {
-    setButtons(selectedButtons.map(button => ({
-      text: button.text,
-      url: button.url,
-      row: button.row || 0
-    })));
   };
 
   return (
@@ -271,42 +251,6 @@ const Index = () => {
               />
             </div>
 
-            <div>
-              <Label className="text-sm font-medium text-foreground">Message Options</Label>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="disable-notification" className="text-sm">
-                    Silent Message (No Notification)
-                  </Label>
-                  <Switch
-                    id="disable-notification"
-                    checked={disableNotification}
-                    onCheckedChange={setDisableNotification}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="success-notifications" className="text-sm">
-                    Success Notifications
-                  </Label>
-                  <Switch
-                    id="success-notifications"
-                    checked={showSuccessNotification}
-                    onCheckedChange={setShowSuccessNotification}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="error-notifications" className="text-sm">
-                    Error Notifications
-                  </Label>
-                  <Switch
-                    id="error-notifications"
-                    checked={showErrorNotification}
-                    onCheckedChange={setShowErrorNotification}
-                  />
-                </div>
-              </div>
-            </div>
-
             <Collapsible>
               <CollapsibleTrigger asChild>
                 <Button variant="outline" type="button" className="w-full">
@@ -315,10 +259,6 @@ const Index = () => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-3">
-                <PredefinedButtons
-                  onSelectButtons={handleSelectPredefinedButtons}
-                  currentButtons={buttons}
-                />
                 {buttons.map((button, index) => (
                   <Card key={index} className="p-4 space-y-3">
                     <div className="flex items-center justify-between mb-2">
