@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, ArrowUp, ArrowDown, Moon, Sun, Minus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { MessageSquare, Send, Image as ImageIcon, Link, Plus, ArrowUp, ArrowDown, Moon, Sun, Minus } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTheme } from "@/components/theme-provider";
+import { Switch } from "@/components/ui/switch";
 import axios from "axios";
 import { PredefinedButtons } from "@/components/PredefinedButtons";
 import { ImageUpload } from "@/components/ImageUpload";
@@ -16,7 +17,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 interface InlineButton {
   text: string;
   url: string;
-  row: number;  // Changed from optional to required
+  row: number;
 }
 
 const Index = () => {
@@ -24,10 +25,11 @@ const Index = () => {
   const [chatId, setChatId] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<string[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [buttons, setButtons] = useState<InlineButton[]>([{ text: "", url: "", row: 0 }]);
   const [parseMode, setParseMode] = useState<"HTML" | "Markdown" | "">("");
+  const [showSuccessNotification, setShowSuccessNotification] = useState(true);
+  const [showErrorNotification, setShowErrorNotification] = useState(true);
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
 
@@ -66,28 +68,32 @@ const Index = () => {
 
   const moveButtonRow = (index: number, direction: "up" | "down") => {
     const newButtons = [...buttons];
-    const currentRow = newButtons[index].row || 0;
+    const currentRow = newButtons[index].row;
     newButtons[index].row = direction === "up" ? currentRow - 1 : currentRow + 1;
-    if (newButtons[index].row! < 0) newButtons[index].row = 0;
+    if (newButtons[index].row < 0) newButtons[index].row = 0;
     setButtons(newButtons);
   };
 
   const sendMessage = async () => {
     if (!botToken || !message.trim() || !chatId) {
-      toast({
-        title: "Error",
-        description: "Please provide bot token, chat ID, and message",
-        variant: "destructive",
-      });
+      if (showErrorNotification) {
+        toast({
+          title: "Error",
+          description: "Please provide bot token, chat ID, and message",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
     if (!validateBotToken(botToken)) {
-      toast({
-        title: "Error",
-        description: "Invalid bot token format. Please check your token.",
-        variant: "destructive",
-      });
+      if (showErrorNotification) {
+        toast({
+          title: "Error",
+          description: "Invalid bot token format. Please check your token.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -104,7 +110,7 @@ const Index = () => {
       const buttonRows = buttons
         .filter(b => b.text && b.url)
         .reduce((acc: { text: string; url: string }[][], button) => {
-          const row = button.row || 0;
+          const row = button.row;
           if (!acc[row]) acc[row] = [];
           acc[row].push({ text: button.text, url: button.url });
           return acc;
@@ -138,23 +144,26 @@ const Index = () => {
         );
       }
 
-      setHistory((prev) => [message, ...prev].slice(0, 5));
       setMessage("");
       setImageUrl("");
       setButtons([{ text: "", url: "", row: 0 }]);
       
-      toast({
-        title: "Success",
-        description: "Message sent successfully!",
-        className: "bg-green-500 text-white",
-      });
+      if (showSuccessNotification) {
+        toast({
+          title: "Success",
+          description: "Message sent successfully!",
+          className: "bg-green-500 text-white",
+        });
+      }
     } catch (error: any) {
       console.error("Telegram API Error:", error);
-      toast({
-        title: "Error",
-        description: error.response?.data?.description || "Failed to send message. Please check your bot token and chat ID.",
-        variant: "destructive",
-      });
+      if (showErrorNotification) {
+        toast({
+          title: "Error",
+          description: error.response?.data?.description || "Failed to send message. Please check your bot token and chat ID.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -254,6 +263,32 @@ const Index = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">Notifications</Label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="success-notifications" className="text-sm">
+                    Success Notifications
+                  </Label>
+                  <Switch
+                    id="success-notifications"
+                    checked={showSuccessNotification}
+                    onCheckedChange={setShowSuccessNotification}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="error-notifications" className="text-sm">
+                    Error Notifications
+                  </Label>
+                  <Switch
+                    id="error-notifications"
+                    checked={showErrorNotification}
+                    onCheckedChange={setShowErrorNotification}
+                  />
+                </div>
+              </div>
+            </div>
+
             <Collapsible>
               <CollapsibleTrigger asChild>
                 <Button variant="outline" type="button" className="w-full">
@@ -270,7 +305,7 @@ const Index = () => {
                   <Card key={index} className="p-4 space-y-3">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-foreground">
-                        Button {index + 1} - Row {button.row! + 1}
+                        Button {index + 1} - Row {button.row + 1}
                       </span>
                       <div className="flex gap-1">
                         <Button
@@ -363,25 +398,6 @@ const Index = () => {
             </Button>
           </div>
         </Card>
-
-        {history.length > 0 && (
-          <Card className="p-6 bg-card/80 backdrop-blur-sm border border-border/50">
-            <div className="flex items-center gap-2 mb-4">
-              <History className="w-5 h-5" />
-              <h2 className="text-lg font-medium text-foreground">Recent Messages</h2>
-            </div>
-            <div className="space-y-3">
-              {history.map((msg, index) => (
-                <div
-                  key={index}
-                  className="p-3 bg-muted rounded-lg text-sm text-foreground"
-                >
-                  {msg}
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
       </div>
     </div>
   );

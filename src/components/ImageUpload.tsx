@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Upload, X } from "lucide-react";
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onImageUrl: (url: string) => void;
