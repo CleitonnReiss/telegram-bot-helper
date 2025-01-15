@@ -4,10 +4,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, Minus, ArrowUp, ArrowDown } from "lucide-react";
+import { MessageSquare, Send, History, Image as ImageIcon, Link, Plus, ArrowUp, ArrowDown, Moon, Sun } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useTheme } from "@/components/theme-provider";
 import axios from "axios";
 
 interface InlineButton {
@@ -26,6 +27,7 @@ const Index = () => {
   const [buttons, setButtons] = useState<InlineButton[]>([{ text: "", url: "", row: 0 }]);
   const [parseMode, setParseMode] = useState<"HTML" | "Markdown" | "">("");
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const savedToken = localStorage.getItem("telegram_bot_token");
@@ -157,60 +159,69 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen bg-background transition-colors duration-300 p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Card className="p-6 space-y-6 bg-white/80 backdrop-blur-sm">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-              <MessageSquare className="w-6 h-6" />
-              Telegram Bot Messenger
-            </h1>
-            <p className="text-sm text-gray-500">
-              Send rich messages to a Telegram chat using your bot
-            </p>
-          </div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+            <MessageSquare className="w-6 h-6" />
+            Telegram Bot Messenger
+          </h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-full"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
 
+        <Card className="p-6 space-y-6 bg-card/80 backdrop-blur-sm border border-border/50">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label htmlFor="botToken" className="text-sm font-medium text-foreground">
                 Bot Token
-              </label>
+              </Label>
               <Input
+                id="botToken"
                 type="password"
                 value={botToken}
                 onChange={(e) => setBotToken(e.target.value)}
                 placeholder="Enter your bot token"
-                className="w-full"
+                className="mt-1"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Format: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label htmlFor="chatId" className="text-sm font-medium text-foreground">
                 Chat ID
-              </label>
+              </Label>
               <Input
+                id="chatId"
                 type="text"
                 value={chatId}
                 onChange={(e) => setChatId(e.target.value)}
                 placeholder="Enter the chat ID"
-                className="w-full"
+                className="mt-1"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Add your bot to a group and use the group's chat ID
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Message Format
-              </label>
+              <Label className="text-sm font-medium text-foreground">Message Format</Label>
               <RadioGroup
                 value={parseMode}
                 onValueChange={(value) => setParseMode(value as "HTML" | "Markdown" | "")}
-                className="flex space-x-4"
+                className="flex space-x-4 mt-1"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="" id="none" />
@@ -228,16 +239,16 @@ const Index = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label htmlFor="imageUrl" className="text-sm font-medium text-foreground">
                 Image URL (Optional)
-              </label>
-              <div className="flex gap-2">
+              </Label>
+              <div className="flex gap-2 mt-1">
                 <Input
+                  id="imageUrl"
                   type="text"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="Enter image URL"
-                  className="w-full"
                 />
                 <Button
                   variant="outline"
@@ -258,48 +269,58 @@ const Index = () => {
                   Inline Buttons
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 mt-2">
+              <CollapsibleContent className="space-y-3 mt-3">
                 {buttons.map((button, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      placeholder="Button Text"
-                      value={button.text}
-                      onChange={(e) => updateButton(index, "text", e.target.value)}
-                    />
-                    <Input
-                      placeholder="URL"
-                      value={button.url}
-                      onChange={(e) => updateButton(index, "url", e.target.value)}
-                    />
-                    <div className="flex gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        type="button"
-                        onClick={() => moveButtonRow(index, "up")}
-                        title="Move to row above"
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        type="button"
-                        onClick={() => moveButtonRow(index, "down")}
-                        title="Move to row below"
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        type="button"
-                        onClick={() => removeButton(index)}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
+                  <Card key={index} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-foreground">
+                        Button {index + 1} - Row {button.row! + 1}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          type="button"
+                          onClick={() => moveButtonRow(index, "up")}
+                          title="Move to row above"
+                          className="h-8 w-8"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          type="button"
+                          onClick={() => moveButtonRow(index, "down")}
+                          title="Move to row below"
+                          className="h-8 w-8"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          type="button"
+                          onClick={() => removeButton(index)}
+                          className="h-8 w-8"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Button Text"
+                        value={button.text}
+                        onChange={(e) => updateButton(index, "text", e.target.value)}
+                      />
+                      <Input
+                        placeholder="URL"
+                        value={button.url}
+                        onChange={(e) => updateButton(index, "url", e.target.value)}
+                      />
+                    </div>
+                  </Card>
                 ))}
                 <Button
                   variant="outline"
@@ -314,22 +335,23 @@ const Index = () => {
             </Collapsible>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label htmlFor="message" className="text-sm font-medium text-foreground">
                 Message
-              </label>
+              </Label>
               <Textarea
+                id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type your message here..."
-                className="min-h-[120px]"
+                className="min-h-[120px] mt-1"
               />
               {parseMode === "HTML" && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   You can use HTML tags: &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;, &lt;code&gt;monospace&lt;/code&gt;, &lt;a href="URL"&gt;link&lt;/a&gt;
                 </p>
               )}
               {parseMode === "Markdown" && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   You can use Markdown: **bold**, *italic*, `code`, [link](URL)
                 </p>
               )}
@@ -338,25 +360,25 @@ const Index = () => {
             <Button
               onClick={sendMessage}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 transition-all"
+              className="w-full"
             >
-              <Send className="w-4 h-4" />
+              <Send className="mr-2 h-4 w-4" />
               {loading ? "Sending..." : "Send Message"}
             </Button>
           </div>
         </Card>
 
         {history.length > 0 && (
-          <Card className="p-6 bg-white/80 backdrop-blur-sm">
+          <Card className="p-6 bg-card/80 backdrop-blur-sm border border-border/50">
             <div className="flex items-center gap-2 mb-4">
-              <History className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-medium text-gray-900">Recent Messages</h2>
+              <History className="w-5 h-5" />
+              <h2 className="text-lg font-medium text-foreground">Recent Messages</h2>
             </div>
             <div className="space-y-3">
               {history.map((msg, index) => (
                 <div
                   key={index}
-                  className="p-3 bg-gray-50 rounded-lg text-sm text-gray-700"
+                  className="p-3 bg-muted rounded-lg text-sm text-foreground"
                 >
                   {msg}
                 </div>
