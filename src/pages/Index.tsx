@@ -173,6 +173,14 @@ const Index = () => {
     }
   };
 
+  const handleSelectPredefinedButtons = (selectedButtons: InlineButton[]) => {
+    setButtons(selectedButtons.map(button => ({
+      text: button.text,
+      url: button.url,
+      row: button.row || 0
+    })));
+  };
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
