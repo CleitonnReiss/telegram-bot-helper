@@ -19,7 +19,11 @@ interface ButtonSet {
 
 interface PredefinedButtonsProps {
   onSelectButtons: (buttons: ButtonSet['buttons']) => void;
-  currentButtons: ButtonSet['buttons'];
+  currentButtons: {
+    text: string;
+    url: string;
+    row: number;
+  }[];
 }
 
 export const PredefinedButtons = ({ onSelectButtons, currentButtons }: PredefinedButtonsProps) => {
@@ -62,10 +66,13 @@ export const PredefinedButtons = ({ onSelectButtons, currentButtons }: Predefine
     try {
       await addDoc(collection(db, 'buttonSets'), {
         name: newSetName,
-        buttons: currentButtons
+        buttons: currentButtons.map(button => ({
+          ...button,
+          row: button.row || 0
+        }))
       });
       setNewSetName('');
-      loadButtonSets();
+      await loadButtonSets();
       toast({
         title: "Success",
         description: "Button set saved successfully",

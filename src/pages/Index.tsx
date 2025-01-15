@@ -16,7 +16,7 @@ import { ImageUpload } from "@/components/ImageUpload";
 interface InlineButton {
   text: string;
   url: string;
-  row?: number;
+  row: number;  // Changed from optional to required
 }
 
 const Index = () => {
@@ -50,7 +50,7 @@ const Index = () => {
 
   const addButton = () => {
     const lastButton = buttons[buttons.length - 1];
-    const newRow = lastButton ? lastButton.row || 0 : 0;
+    const newRow = lastButton ? lastButton.row : 0;
     setButtons([...buttons, { text: "", url: "", row: newRow }]);
   };
 
