@@ -30,6 +30,7 @@ const Index = () => {
   const [parseMode, setParseMode] = useState<"HTML" | "Markdown" | "">("");
   const [showSuccessNotification, setShowSuccessNotification] = useState(true);
   const [showErrorNotification, setShowErrorNotification] = useState(true);
+  const [disableNotification, setDisableNotification] = useState(false);
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
 
@@ -121,25 +122,28 @@ const Index = () => {
         inline_keyboard: buttonRows
       } : undefined;
 
+      const messageParams = {
+        chat_id: chatId,
+        parse_mode: parseMode || undefined,
+        disable_notification: disableNotification,
+        reply_markup: replyMarkup
+      };
+
       if (imageUrl) {
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendPhoto`,
           {
-            chat_id: chatId,
+            ...messageParams,
             photo: imageUrl,
             caption: message,
-            parse_mode: parseMode || undefined,
-            reply_markup: replyMarkup
           }
         );
       } else {
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendMessage`,
           {
-            chat_id: chatId,
+            ...messageParams,
             text: message,
-            parse_mode: parseMode || undefined,
-            reply_markup: replyMarkup
           }
         );
       }
@@ -167,10 +171,6 @@ const Index = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSelectPredefinedButtons = (newButtons: InlineButton[]) => {
-    setButtons(newButtons);
   };
 
   return (
@@ -263,9 +263,19 @@ const Index = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Notifications</Label>
-              <div className="space-y-2">
+            <div>
+              <Label className="text-sm font-medium text-foreground">Message Options</Label>
+              <div className="space-y-2 mt-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="disable-notification" className="text-sm">
+                    Silent Message (No Notification)
+                  </Label>
+                  <Switch
+                    id="disable-notification"
+                    checked={disableNotification}
+                    onCheckedChange={setDisableNotification}
+                  />
+                </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="success-notifications" className="text-sm">
                     Success Notifications
