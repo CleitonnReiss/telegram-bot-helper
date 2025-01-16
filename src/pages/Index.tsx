@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { MessageSquare, Send, Image as ImageIcon, Link, Plus, ArrowUp, ArrowDown, Moon, Sun, Minus } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useTheme } from "@/components/theme-provider";
 import axios from "axios";
 import { ImageUpload } from "@/components/ImageUpload";
+import { formatMessageForTelegram } from "@/utils/markdownFormatter";
 
 interface InlineButton {
   text: string;
@@ -25,8 +25,6 @@ const Index = () => {
   const [loading, setLoading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [buttons, setButtons] = useState<InlineButton[]>([{ text: "", url: "", row: 0 }]);
-  const [parseMode, setParseMode] = useState<"HTML" | "Markdown" | "">("");
-  const [disableNotification, setDisableNotification] = useState(false);
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
 
@@ -114,10 +112,11 @@ const Index = () => {
         inline_keyboard: buttonRows
       } : undefined;
 
+      const formattedMessage = formatMessageForTelegram(message);
+
       const messageParams = {
         chat_id: chatId,
-        parse_mode: parseMode || undefined,
-        disable_notification: disableNotification,
+        parse_mode: "MarkdownV2",
         reply_markup: replyMarkup
       };
 
@@ -127,7 +126,7 @@ const Index = () => {
           {
             ...messageParams,
             photo: imageUrl,
-            caption: message,
+            caption: formattedMessage,
           }
         );
       } else {
@@ -135,7 +134,7 @@ const Index = () => {
           `https://api.telegram.org/bot${botToken}/sendMessage`,
           {
             ...messageParams,
-            text: message,
+            text: formattedMessage,
           }
         );
       }
@@ -217,28 +216,6 @@ const Index = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 Add your bot to a group and use the group's chat ID
               </p>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium text-foreground">Message Format</Label>
-              <RadioGroup
-                value={parseMode}
-                onValueChange={(value) => setParseMode(value as "HTML" | "Markdown" | "")}
-                className="flex space-x-4 mt-1"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="" id="none" />
-                  <Label htmlFor="none">Plain Text</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="HTML" id="html" />
-                  <Label htmlFor="html">HTML</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Markdown" id="markdown" />
-                  <Label htmlFor="markdown">Markdown</Label>
-                </div>
-              </RadioGroup>
             </div>
 
             <div>
@@ -331,19 +308,12 @@ const Index = () => {
                 id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your message here..."
+                placeholder="Type your message here... Use Markdown formatting like **bold**, *italic*, ~~strikethrough~~, `code`, ```code blocks```, or [links](url)"
                 className="min-h-[120px] mt-1"
               />
-              {parseMode === "HTML" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  You can use HTML tags: &lt;b&gt;bold&lt;/b&gt;, &lt;i&gt;italic&lt;/i&gt;, &lt;code&gt;monospace&lt;/code&gt;, &lt;a href="URL"&gt;link&lt;/a&gt;
-                </p>
-              )}
-              {parseMode === "Markdown" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  You can use Markdown: **bold**, *italic*, `code`, [link](URL)
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Supports Markdown: **bold**, *italic*, ~~strikethrough~~, `code`, ```code blocks```, [link](url)
+              </p>
             </div>
 
             <Button
