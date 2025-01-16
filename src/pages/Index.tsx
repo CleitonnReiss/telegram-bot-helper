@@ -114,27 +114,25 @@ const Index = () => {
 
       const formattedMessage = formatMessageForTelegram(message);
 
-      const messageParams = {
-        chat_id: chatId,
-        parse_mode: "MarkdownV2",
-        reply_markup: replyMarkup
-      };
-
       if (imageUrl) {
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendPhoto`,
           {
-            ...messageParams,
+            chat_id: chatId,
             photo: imageUrl,
             caption: formattedMessage,
+            parse_mode: "MarkdownV2",
+            reply_markup: replyMarkup
           }
         );
       } else {
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendMessage`,
           {
-            ...messageParams,
+            chat_id: chatId,
             text: formattedMessage,
+            parse_mode: "MarkdownV2",
+            reply_markup: replyMarkup
           }
         );
       }

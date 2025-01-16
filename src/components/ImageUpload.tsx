@@ -84,7 +84,6 @@ export const ImageUpload = ({ onImageUrl, currentUrl }: ImageUploadProps) => {
           accept="image/*,video/*,gif/*"
           onChange={handleFileUpload}
           className="hidden"
-          disabled={uploading}
         />
         <Button
           variant="outline"
