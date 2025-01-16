@@ -121,7 +121,6 @@ const Index = () => {
       };
 
       if (imageUrl) {
-        // Send photo with caption
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendPhoto`,
           {
@@ -131,7 +130,6 @@ const Index = () => {
           }
         );
       } else {
-        // Send text-only message
         await axios.post(
           `https://api.telegram.org/bot${botToken}/sendMessage`,
           {
@@ -141,7 +139,6 @@ const Index = () => {
         );
       }
 
-      // Clear form after successful send
       setMessage("");
       setImageUrl("");
       setButtons([{ text: "", url: "", row: 0 }]);
